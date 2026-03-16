@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Sistem IGD — Asesmen & Farmasi</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;}
+input,select,textarea{font-family:'DM Sans',sans-serif;outline:none;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:#0f1117;}
+::-webkit-scrollbar-thumb{background:#1e2535;border-radius:4px;}
+
+/* HEADER */
+#header{background:#161b27;border-bottom:1px solid #1e2535;padding:0 20px;display:flex;align-items:center;gap:16px;height:54px;flex-shrink:0;position:sticky;top:0;z-index:100;}
+.logo-box{width:32px;height:32px;background:linear-gradient(135deg,#ef4444,#f97316);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.logo-title{font-weight:700;font-size:13px;color:#fff;}
+.logo-sub{font-size:10px;color:#64748b;font-family:'DM Mono';}
+.spacer{flex:1;}
+.nav-btn{background:transparent;color:#64748b;border:none;padding:6px 14px;border-radius:6px;font-weight:600;font-size:12px;transition:all .2s;display:flex;align-items:center;gap:5px;}
+.nav-btn.active{background:#ef4444;color:#fff;}
+.nav-btn:disabled{opacity:.35;cursor:not-allowed;}
+.date-badge{font-size:11px;color:#475569;font-family:'DM Mono';flex-shrink:0;}
+
+/* TOAST */
+#toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);padding:11px 22px;border-radius:8px;font-weight:600;font-size:13px;z-index:9999;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#161b27;border:1px solid #1e2535;border-radius:14px;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-weight:700;font-size:16px;margin-bottom:18px;color:#fff;}
+
+/* VIEWS */
+.view{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.view.active{display:flex;}
+
+/* ── PATIENT LIST ── */
+#patient-list-view{padding:20px;overflow-y:auto;}
+.pl-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.pl-title{font-size:18px;font-weight:700;}
+.btn-primary{background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-weight:700;font-size:13px;}
+.btn-secondary{background:#1e2535;color:#94a3b8;border:none;border-radius:8px;padding:8px 16px;font-weight:600;font-size:13px;}
+.btn-success{background:#10b981;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:600;font-size:12px;}
+.btn-warning{background:#f59e0b;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:600;font-size:12px;}
+.btn-info{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-weight:600;font-size:12px;}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px;}
+.search-bar{display:flex;gap:8px;margin-bottom:14px;}
+.search-input{background:#161b27;border:1px solid #1e2535;border-radius:8px;padding:9px 14px;color:#e2e8f0;font-size:13px;flex:1;}
+.patient-table{width:100%;border-collapse:collapse;}
+.patient-table th{background:#161b27;padding:10px 14px;text-align:left;font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #1e2535;}
+.patient-table td{padding:12px 14px;border-bottom:1px solid #0f1117;font-size:13px;vertical-align:middle;}
+.patient-table tr:hover td{background:#161b2750;}
+.badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;}
+.badge-red{background:#ef444420;color:#ef4444;}
+.badge-yellow{background:#f59e0b20;color:#f59e0b;}
+.badge-green{background:#10b98120;color:#10b981;}
+.badge-blue{background:#3b82f620;color:#3b82f6;}
+.badge-gray{background:#47556920;color:#475569;}
+.empty-state{text-align:center;padding:60px 20px;color:#334155;}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.action-btns{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* ── FORM SHARED ── */
+.form-view{padding:20px;overflow-y:auto;flex:1;}
+.form-section{background:#161b27;border:1px solid #1e2535;border-radius:12px;padding:20px;margin-bottom:16px;}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.section-title::after{content:'';flex:1;height:1px;background:#1e2535;}
+.form-grid{display:grid;gap:14px;}
+.form-grid-2{grid-template-columns:1fr 1fr;}
+.form-grid-3{grid-template-columns:1fr 1fr 1fr;}
+.form-grid-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;}
+.form-input{background:#0f1117;border:1px solid #1e2535;border-radius:7px;padding:9px 12px;color:#e2e8f0;font-size:13px;transition:border-color .2s;width:100%;}
+.form-input:focus{border-color:#3b82f6;}
+.form-input[readonly]{color:#64748b;cursor:default;}
+textarea.form-input{resize:vertical;min-height:70px;}
+select.form-input{cursor:pointer;}
+.form-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:4px;}
+.page-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.page-back{background:#1e2535;color:#94a3b8;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;}
+.page-title{font-size:18px;font-weight:700;}
+.patient-info-bar{background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap;}
+.pib-item{display:flex;flex-direction:column;gap:2px;}
+.pib-label{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;}
+.pib-val{font-size:13px;font-weight:600;color:#e2e8f0;}
+
+/* Triase color selector */
+.triase-options{display:flex;gap:8px;}
+.triase-opt{flex:1;padding:8px;border-radius:8px;border:2px solid #1e2535;text-align:center;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;opacity:.5;}
+.triase-opt.selected{opacity:1;border-color:currentColor;}
+.triase-merah{color:#ef4444;}
+.triase-kuning{color:#f59e0b;}
+.triase-hijau{color:#10b981;}
+.triase-hitam{color:#94a3b8;}
+
+/* Checkbox groups */
+.check-group{display:flex;flex-wrap:wrap;gap:8px;}
+.check-item{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:5px 10px;background:#0f1117;border:1px solid #1e2535;border-radius:6px;transition:all .2s;}
+.check-item input{accent-color:#3b82f6;width:13px;height:13px;}
+.check-item:hover{border-color:#334155;}
+.check-item.checked{border-color:#3b82f6;background:#3b82f610;}
+
+/* GCS */
+.gcs-display{font-family:'DM Mono';font-size:24px;font-weight:700;color:#3b82f6;text-align:center;padding:10px;}
+
+/* ── POS VIEW ── */
+#pos-view{display:none;flex:1;flex-direction:row;overflow:hidden;height:calc(100vh - 54px);}
+#pos-view.active{display:flex;}
+#drug-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#filter-bar{padding:10px 14px;background:#161b27;border-bottom:1px solid #1e2535;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+#search-drug{background:#0f1117;border:1px solid #1e2535;border-radius:6px;padding:7px 12px;color:#e2e8f0;font-size:13px;width:180px;}
+.cat-filters{display:flex;gap:4px;flex-wrap:wrap;}
+.cat-btn{background:#1e2535;color:#fff;border:none;border-radius:5px;padding:4px 9px;font-size:10px;font-weight:600;opacity:.55;transition:all .15s;cursor:pointer;}
+.cat-btn.active{opacity:1;}
+#drug-grid{flex:1;overflow-y:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px;align-content:start;}
+.drug-card{background:#161b27;border:1.5px solid #1e2535;border-radius:10px;padding:11px 10px;text-align:left;transition:all .15s;cursor:pointer;width:100%;}
+.drug-card:hover:not(:disabled){border-color:#334155;background:#1a2030;}
+.drug-card.in-cart{background:#1e2a1e;border-color:#10b981;}
+.drug-card:disabled{opacity:.4;cursor:not-allowed;}
+.dc-cat{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.dc-name{font-size:12px;font-weight:600;color:#e2e8f0;line-height:1.3;margin-bottom:5px;}
+.dc-bottom{display:flex;justify-content:space-between;align-items:center;}
+.dc-stock{font-size:10px;}
+.dc-badge{font-size:9px;background:#10b981;color:#fff;border-radius:10px;padding:1px 6px;font-weight:700;}
+.dc-price{font-size:11px;color:#94a3b8;margin-top:2px;font-family:'DM Mono';}
+
+/* CART */
+#cart-panel{width:290px;background:#161b27;border-left:1px solid #1e2535;display:flex;flex-direction:column;}
+.cart-patient-info{padding:12px 14px;background:#0f1117;border-bottom:1px solid #1e2535;}
+.cpi-name{font-size:13px;font-weight:700;}
+.cpi-dx{font-size:11px;color:#64748b;margin-top:2px;}
+#cart-header{padding:12px 14px;border-bottom:1px solid #1e2535;display:flex;justify-content:space-between;align-items:center;}
+#cart-count{font-size:11px;color:#475569;}
+#cart-items{flex:1;overflow-y:auto;padding:8px 10px;}
+.cart-empty{text-align:center;color:#334155;margin-top:40px;font-size:13px;}
+.cart-item{background:#0f1117;border-radius:8px;padding:9px 11px;margin-bottom:7px;border:1px solid #1e2535;}
+.ci-name{font-size:11px;font-weight:600;color:#e2e8f0;margin-bottom:3px;}
+.ci-unit{font-size:10px;color:#475569;margin-bottom:5px;}
+.ci-row{display:flex;align-items:center;justify-content:space-between;}
+.qty-wrap{display:flex;align-items:center;gap:5px;}
+.qty-btn{width:22px;height:22px;border-radius:5px;background:#1e2535;color:#e2e8f0;border:none;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.qty-val{font-family:'DM Mono';font-size:13px;font-weight:600;min-width:18px;text-align:center;}
+.ci-price{font-size:11px;font-family:'DM Mono';color:#94a3b8;}
+.ci-remove{background:transparent;border:none;color:#ef4444;font-size:13px;}
+#cart-footer{padding:12px 14px;border-top:1px solid #1e2535;}
+.total-row{display:flex;justify-content:space-between;margin-bottom:10px;}
+.total-label{color:#64748b;font-size:13px;}
+.total-val{font-family:'DM Mono';font-weight:700;font-size:15px;color:#fff;}
+#checkout-btn{width:100%;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;border:none;border-radius:8px;padding:12px;font-weight:700;font-size:13px;transition:all .2s;}
+#checkout-btn:disabled{background:#1e2535;color:#475569;cursor:not-allowed;}
+
+/* ── SURAT SAKIT PRINT ── */
+@media print {
+  body{background:#fff !important;color:#000 !important;}
+  #header,#toast,.no-print{display:none !important;}
+  #surat-print{display:block !important;padding:0 !important;}
+  .print-page{page-break-after:always;}
+}
+#surat-print{display:none;}
+.print-container{max-width:800px;margin:0 auto;background:#fff;color:#000;padding:30px;font-family:'Times New Roman',serif;font-size:12px;}
+.print-kop{display:flex;align-items:center;gap:20px;border-bottom:3px solid #000;padding-bottom:12px;margin-bottom:16px;}
+.print-kop-logo{width:70px;height:70px;background:#eee;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.print-kop-text h2{font-size:18px;margin-bottom:2px;}
+.print-kop-text p{font-size:11px;color:#555;}
+.print-title{text-align:center;font-size:16px;font-weight:700;margin:16px 0 20px;text-decoration:underline;}
+.print-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+.print-table td{padding:5px 6px;vertical-align:top;font-size:12px;}
+.print-table td:first-child{width:180px;font-weight:600;}
+.print-table td:nth-child(2){width:10px;}
+.print-sign{display:flex;justify-content:flex-end;margin-top:30px;}
+.print-sign-box{text-align:center;min-width:180px;}
+.print-sign-line{border-top:1px solid #000;margin-top:70px;padding-top:4px;font-weight:700;}
+
+/* ── REPORT ── */
+#report-view{padding:20px;overflow-y:auto;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:14px 16px;}
+.stat-icon{font-size:18px;margin-bottom:5px;}
+.stat-val{font-family:'DM Mono';font-size:18px;font-weight:700;color:#fff;}
+.stat-label{font-size:11px;color:#475569;margin-top:2px;}
+
+/* CONFIRM MODAL */
+.receipt-row{display:flex;justify-content:space-between;margin-bottom:4px;color:#94a3b8;font-size:13px;}
+.receipt-total{border-top:1px solid #1e2535;margin-top:8px;padding-top:8px;font-weight:700;color:#fff;display:flex;justify-content:space-between;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.btn-cancel{flex:1;background:#1e2535;color:#94a3b8;border:none;border-radius:8px;padding:10px;font-weight:600;}
+.btn-confirm{flex:1;background:#ef4444;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:600;}
+.btn-save{flex:1;background:#10b981;color:#fff;border:none;border-radius:8px;padding:10px;font-weight:600;}
+
+@media(max-width:768px){
+  .form-grid-2,.form-grid-3,.form-grid-4{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  #cart-panel{width:260px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="logo-box">🏥</div>
+    <div>
+      <div class="logo-title">SISTEM IGD</div>
+      <div class="logo-sub">Asesmen & Farmasi</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <button class="nav-btn active" id="nav-pasien" onclick="switchNav('pasien')">👤 Pasien</button>
+  <button class="nav-btn" id="nav-stok" onclick="switchNav('stok')">📦 Stok Obat</button>
+  <button class="nav-btn" id="nav-laporan" onclick="switchNav('laporan')">📊 Laporan</button>
+  <div class="date-badge" id="date-badge"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     CONFIRM CHECKOUT MODAL
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title">Konfirmasi Pemberian Obat</div>
+    <div style="background:#0f1117;border-radius:8px;padding:12px;margin-bottom:4px;" id="modal-receipt"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('confirm-modal')">Batal</button>
+      <button class="btn-confirm" onclick="confirmCheckout()">Berikan Obat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     RESTOCK MODAL
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="restock-modal">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="modal-title">Tambah Stok</div>
+    <div id="restock-item-name" style="color:#94a3b8;font-size:14px;margin-bottom:16px;"></div>
+    <div class="form-group">
+      <label class="form-label" id="restock-unit-lbl">Jumlah</label>
+      <input class="form-input" id="restock-qty" type="number" placeholder="0" style="font-family:'DM Mono';font-size:18px;"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('restock-modal')">Batal</button>
+      <button class="btn-save" onclick="confirmRestock()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SURAT SAKIT MODAL (untuk print)
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="surat-modal">
+  <div class="modal-box" style="max-width:860px;padding:0;overflow:hidden;">
+    <div style="padding:14px 20px;border-bottom:1px solid #1e2535;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:700;font-size:15px;">🖨️ Preview Surat Sakit</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="closeModal('surat-modal')">Tutup</button>
+        <button class="btn-primary" onclick="window.print()">🖨️ Print</button>
+      </div>
+    </div>
+    <div style="overflow-y:auto;max-height:80vh;background:#fff;">
+      <div id="surat-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     NEW PATIENT MODAL
+════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="new-patient-modal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title">➕ Registrasi Pasien Baru</div>
+    <div class="form-grid form-grid-2" style="gap:12px;">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Nama Lengkap *</label>
+        <input class="form-input" id="np-nama" placeholder="Nama pasien"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">No. MR</label>
+        <input class="form-input" id="np-mr" placeholder="Auto-generate" readonly style="color:#64748b;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">NIK</label>
+        <input class="form-input" id="np-nik" placeholder="16 digit NIK" maxlength="16"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal Lahir</label>
+        <input class="form-input" id="np-ttl" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Jenis Kelamin</label>
+        <select class="form-input" id="np-jk">
+          <option value="">-- Pilih --</option>
+          <option>Laki-laki</option>
+          <option>Perempuan</option>
+        </select>
+      </div>
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Alamat</label>
+        <input class="form-input" id="np-alamat" placeholder="Alamat lengkap"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">No. Telepon</label>
+        <input class="form-input" id="np-telp" placeholder="08xxxxxxxxxx"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Alergi</label>
+        <input class="form-input" id="np-alergi" placeholder="Tidak ada / sebutkan"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('new-patient-modal')">Batal</button>
+      <button class="btn-confirm" onclick="saveNewPatient()">Simpan & Buat Asesmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT AREA
+════════════════════════════════════════════════════ -->
+<div id="app" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+  <!-- ── PATIENT LIST VIEW ── -->
+  <div class="view active" id="view-pasien" style="padding:20px;overflow-y:auto;">
+    <div class="pl-header">
+      <div class="pl-title">👤 Daftar Pasien IGD</div>
+      <button class="btn-primary" onclick="openModal('new-patient-modal');genMR()">+ Pasien Baru</button>
+    </div>
+    <div class="search-bar">
+      <input class="search-input" id="pt-search" placeholder="🔍 Cari nama / No. MR / NIK..." oninput="renderPatientTable()"/>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="patient-table" id="patient-table">
+        <thead>
+          <tr>
+            <th>No. MR</th><th>Nama Pasien</th><th>Tgl Lahir</th><th>Triase</th><th>Diagnosis</th><th>Status</th><th>Waktu Masuk</th><th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="pt-tbody"></tbody>
+      </table>
+      <div id="pt-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">🏥</div>
+        <div style="font-weight:600;margin-bottom:6px;">Belum ada pasien terdaftar</div>
+        <div style="font-size:13px;color:#475569;">Klik "Pasien Baru" untuk mendaftarkan pasien IGD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ASESMEN VIEW ── -->
+  <div class="view" id="view-asesmen" style="overflow-y:auto;">
+    <div class="form-view">
+      <div class="page-header">
+        <button class="page-back" onclick="backToList()">← Kembali</button>
+        <div class="page-title">📋 Asesmen Gawat Darurat</div>
+        <div class="spacer"></div>
+        <button class="btn-primary" onclick="saveAsesmen()">Simpan Asesmen →</button>
+      </div>
+      <div class="patient-info-bar" id="asesmen-patient-bar"></div>
+
+      <!-- SURVEI PRIMER -->
+      <div class="form-section">
+        <div class="section-title">🔴 Survei Primer</div>
+
+        <div style="margin-bottom:16px;">
+          <div class="form-label" style="margin-bottom:8px;">Triase Dokter</div>
+          <div class="triase-options">
+            <div class="triase-opt triase-merah" data-triase="Merah" onclick="setTriase(this)">🔴 MERAH<br/><span style="font-size:10px;font-weight:400;">Gawat Darurat</span></div>
+            <div class="triase-opt triase-kuning" data-triase="Kuning" onclick="setTriase(this)">🟡 KUNING<br/><span style="font-size:10px;font-weight:400;">Darurat</span></div>
+            <div class="triase-opt triase-hijau" data-triase="Hijau" onclick="setTriase(this)">🟢 HIJAU<br/><span style="font-size:10px;font-weight:400;">Tidak Darurat</span></div>
+            <div class="triase-opt triase-hitam" data-triase="Hitam" onclick="setTriase(this)">⚫ HITAM<br/><span style="font-size:10px;font-weight:400;">Harapan Nihil</span></div>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid-3">
+          <div>
+            <div class="form-label" style="margin-bottom:8px;">Jalan Napas</div>
+            <div class="check-group" id="chk-airway">
+              <label class="check-item"><input type="checkbox" value="Paten"/> Paten</label>
+              <label class="check-item"><input type="checkbox" value="Obstruksi Partial"/> Obstruksi Partial</label>
+              <label class="check-item"><input type="checkbox" value="Obstruksi Total"/> Obstruksi Total</label>
+              <label class="check-item"><input type="checkbox" value="Ancaman Obstruksi"/> Ancaman Obstruksi</label>
+              <label class="check-item"><input type="checkbox" value="Stridor"/> Stridor</label>
+              <label class="check-item"><input type="checkbox" value="Gurgling"/> Gurgling</label>
+              <label class="check-item"><input type="checkbox" value="Snoring"/> Snoring</label>
+              <label class="check-item"><input type="checkbox" value="Wheezing"/> Wheezing</label>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label class="form-label">Ket Airway</label><input class="form-input" id="ket-airway" placeholder="Keterangan..."/></div>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:8px;">Pernapasan</div>
+            <div class="check-group" id="chk-breathing">
+              <label class="check-item"><input type="checkbox" value="Spontan, Reguler"/> Spontan, Reguler</label>
+              <label class="check-item"><input type="checkbox" value="Gerakan Dada Simetris"/> Dada Simetris</label>
+              <label class="check-item"><input type="checkbox" value="Takipneu"/> Takipneu</label>
+              <label class="check-item"><input type="checkbox" value="Bradipneu"/> Bradipneu</label>
+              <label class="check-item"><input type="checkbox" value="Apneu"/> Apneu</label>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label class="form-label">Ket Pernapasan</label><input class="form-input" id="ket-breathing" placeholder="Keterangan..."/></div>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:8px;">Sirkulasi</div>
+            <div class="check-group" id="chk-circulation">
+              <label class="check-item"><input type="checkbox" value="Nadi Reguler, Kuat"/> Nadi Reguler, Kuat</label>
+              <label class="check-item"><input type="checkbox" value="Nadi Lemah"/> Nadi Lemah</label>
+              <label class="check-item"><input type="checkbox" value="Akral Hangat, Kering"/> Akral Hangat</label>
+              <label class="check-item"><input type="checkbox" value="Akral Dingin"/> Akral Dingin</label>
+              <label class="check-item"><input type="checkbox" value="CRT < 2 detik"/> CRT &lt; 2 dtk</label>
+              <label class="check-item"><input type="checkbox" value="CRT > 2 detik"/> CRT &gt; 2 dtk</label>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label class="form-label">Ket Sirkulasi</label><input class="form-input" id="ket-circulation" placeholder="Keterangan..."/></div>
+          </div>
+        </div>
+
+        <!-- GCS & Disabilitas -->
+        <div class="form-grid form-grid-2" style="margin-top:16px;">
+          <div>
+            <div class="form-label" style="margin-bottom:10px;">Disabilitas (GCS)</div>
+            <div class="form-grid form-grid-3" style="gap:8px;">
+              <div class="form-group">
+                <label class="form-label">E (Eye)</label>
+                <select class="form-input" id="gcs-e" onchange="calcGCS()">
+                  <option value="4">4 - Spontan</option><option value="3">3 - Suara</option>
+                  <option value="2">2 - Nyeri</option><option value="1">1 - Tidak ada</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">V (Verbal)</label>
+                <select class="form-input" id="gcs-v" onchange="calcGCS()">
+                  <option value="5">5 - Orientasi baik</option><option value="4">4 - Bingung</option>
+                  <option value="3">3 - Kata-kata</option><option value="2">2 - Suara</option>
+                  <option value="1">1 - Tidak ada</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">M (Motor)</label>
+                <select class="form-input" id="gcs-m" onchange="calcGCS()">
+                  <option value="6">6 - Ikut perintah</option><option value="5">5 - Lokalisir</option>
+                  <option value="4">4 - Menarik</option><option value="3">3 - Fleksi</option>
+                  <option value="2">2 - Ekstensi</option><option value="1">1 - Tidak ada</option>
+                </select>
+              </div>
+            </div>
+            <div class="gcs-display" id="gcs-display">GCS: 15</div>
+            <div class="form-grid form-grid-2" style="gap:8px;margin-top:8px;">
+              <div class="form-group">
+                <label class="form-label">Pupil</label>
+                <select class="form-input" id="pupil">
+                  <option>Isokor</option><option>Anisokor</option><option>Miosis</option><option>Midriasis</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Diameter</label>
+                <input class="form-input" id="diameter-pupil" placeholder="mis: 3/3 mm"/>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:10px;">Eksposur</div>
+            <div class="check-group" id="chk-exposure">
+              <label class="check-item"><input type="checkbox" value="Deformitas"/> Deformitas</label>
+              <label class="check-item"><input type="checkbox" value="Burn"/> Burn</label>
+              <label class="check-item"><input type="checkbox" value="Ekskoriasi"/> Ekskoriasi</label>
+              <label class="check-item"><input type="checkbox" value="Tenderness"/> Tenderness</label>
+              <label class="check-item"><input type="checkbox" value="Contusio"/> Contusio</label>
+              <label class="check-item"><input type="checkbox" value="Laserasi"/> Laserasi</label>
+              <label class="check-item"><input type="checkbox" value="Abrasi"/> Abrasi</label>
+              <label class="check-item"><input type="checkbox" value="Swelling"/> Swelling</label>
+              <label class="check-item"><input type="checkbox" value="Tidak tampak jelas"/> Tidak tampak jelas</label>
+              <label class="check-item"><input type="checkbox" value="Penetrasi"/> Penetrasi</label>
+            </div>
+            <div class="form-group" style="margin-top:8px;"><label class="form-label">Ket Eksposur</label><input class="form-input" id="ket-exposure" placeholder="Keterangan..."/></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SURVEI SEKUNDER -->
+      <div class="form-section">
+        <div class="section-title">🟡 Survei Sekunder — Vital Sign</div>
+        <div class="form-grid form-grid-4">
+          <div class="form-group"><label class="form-label">TD (mmHg)</label><input class="form-input" id="vs-td" placeholder="120/80"/></div>
+          <div class="form-group"><label class="form-label">Nadi (x/mnt)</label><input class="form-input" id="vs-nadi" placeholder="80" type="number"/></div>
+          <div class="form-group"><label class="form-label">RR (x/mnt)</label><input class="form-input" id="vs-rr" placeholder="20" type="number"/></div>
+          <div class="form-group"><label class="form-label">Suhu (°C)</label><input class="form-input" id="vs-suhu" placeholder="36.5"/></div>
+          <div class="form-group"><label class="form-label">SpO2 (%)</label><input class="form-input" id="vs-spo2" placeholder="98" type="number"/></div>
+          <div class="form-group"><label class="form-label">GDS (mg/dL)</label><input class="form-input" id="vs-gds" placeholder="-"/></div>
+          <div class="form-group"><label class="form-label">BB (kg)</label><input class="form-input" id="vs-bb" placeholder="60"/></div>
+          <div class="form-group"><label class="form-label">TB (cm)</label><input class="form-input" id="vs-tb" placeholder="165"/></div>
+        </div>
+        <div class="form-grid form-grid-2" style="margin-top:14px;">
+          <div class="form-group"><label class="form-label">Keadaan Umum</label><input class="form-input" id="ku" placeholder="mis: tampak sesak, composmentis"/></div>
+          <div class="form-group"><label class="form-label">Pain Scale (0-10)</label><input class="form-input" id="pain-scale" placeholder="0" type="number" min="0" max="10"/></div>
+        </div>
+        <div class="form-grid form-grid-3" style="margin-top:14px;">
+          <div class="form-group"><label class="form-label">Kepala</label><input class="form-input" id="pe-kepala" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Mata</label><input class="form-input" id="pe-mata" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Hidung</label><input class="form-input" id="pe-hidung" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Telinga</label><input class="form-input" id="pe-telinga" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Mulut</label><input class="form-input" id="pe-mulut" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Leher</label><input class="form-input" id="pe-leher" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Thorax</label><input class="form-input" id="pe-thorax" placeholder="simetris"/></div>
+          <div class="form-group"><label class="form-label">Cor</label><input class="form-input" id="pe-cor" placeholder="s1s2 reguler"/></div>
+          <div class="form-group"><label class="form-label">Pulmo</label><input class="form-input" id="pe-pulmo" placeholder="sdv +/+"/></div>
+          <div class="form-group"><label class="form-label">Abdomen</label><input class="form-input" id="pe-abdomen" placeholder="supel, peristaltik (+)"/></div>
+          <div class="form-group"><label class="form-label">Punggung & Pinggang</label><input class="form-input" id="pe-punggung" placeholder="tidak ada kelainan"/></div>
+          <div class="form-group"><label class="form-label">Ekstremitas</label><input class="form-input" id="pe-ekstremitas" placeholder="oedem -/-"/></div>
+        </div>
+      </div>
+
+      <!-- ANAMNESIS -->
+      <div class="form-section">
+        <div class="section-title">📝 Anamnesis</div>
+        <div class="form-grid" style="gap:12px;">
+          <div class="form-group"><label class="form-label">Keluhan Utama & RPS</label><textarea class="form-input" id="keluhan" rows="3" placeholder="Deskripsikan keluhan utama dan riwayat penyakit sekarang..."></textarea></div>
+          <div class="form-group"><label class="form-label">RPD & RPK (Riwayat Penyakit Dahulu & Keluarga)</label><textarea class="form-input" id="rpd" rows="2" placeholder="mis: DM, hipertensi, asma..."></textarea></div>
+          <div class="form-group"><label class="form-label">Riwayat Terapi & Pemberian Obat</label><textarea class="form-input" id="riwayat-terapi" rows="2" placeholder="Obat-obatan yang sedang/pernah dikonsumsi..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- DIAGNOSIS & PLAN -->
+      <div class="form-section">
+        <div class="section-title">🎯 Diagnosis & Plan</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group"><label class="form-label">Diagnosa Kerja</label><input class="form-input" id="dx-kerja" placeholder="mis: dyspneu ec asma serangan sedang"/></div>
+          <div class="form-group"><label class="form-label">Diagnosa Sekunder</label><input class="form-input" id="dx-sekunder" placeholder="Diagnosa penyerta..."/></div>
+          <div class="form-group"><label class="form-label">Terapi IGD</label><textarea class="form-input" id="terapi-igd" rows="3" placeholder="A. ...\nB. ...\nC. ..."></textarea></div>
+          <div class="form-group"><label class="form-label">Advis DPJP & Konsultasi</label><textarea class="form-input" id="advis-dpjp" rows="3" placeholder="..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- PENUNJANG & TINDAK LANJUT -->
+      <div class="form-section">
+        <div class="section-title">🔬 Penunjang & Tindak Lanjut</div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group"><label class="form-label">Laboratorium</label><input class="form-input" id="lab" placeholder="..."/></div>
+          <div class="form-group"><label class="form-label">Radiologi</label><input class="form-input" id="radiologi" placeholder="..."/></div>
+          <div class="form-group">
+            <label class="form-label">Indikasi Rawat</label>
+            <select class="form-input" id="indikasi-rawat">
+              <option value="Tidak">Tidak</option>
+              <option value="Ya - Rawat Inap">Ya - Rawat Inap</option>
+              <option value="Ya - Observasi">Ya - Observasi</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tindak Lanjut</label>
+            <select class="form-input" id="tindak-lanjut">
+              <option>Rawat Jalan</option><option>Rawat Inap</option><option>Rujuk</option><option>Pulang</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Nama Dokter</label><input class="form-input" id="dokter-asesmen" placeholder="mis: dr. Elmira Apriliani"/></div>
+          <div class="form-group"><label class="form-label">Periode Istirahat (untuk Surat Sakit)</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input class="form-input" id="istirahat-dari" type="date" style="flex:1;"/>
+              <span style="color:#64748b;font-size:12px;">s/d</span>
+              <input class="form-input" id="istirahat-sampai" type="date" style="flex:1;"/>
+            </div>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Nama Rumah Sakit / Klinik</label><input class="form-input" id="nama-rs" placeholder="mis: RS PKU Muhammadiyah Yogyakarta"/></div>
+          <div class="form-group" style="grid-column:1/-1;"><label class="form-label">Alamat RS / Klinik</label><input class="form-input" id="alamat-rs" placeholder="mis: Jl. K.H. Ahmad Dahlan No. 20 Yogyakarta"/></div>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button class="btn-secondary" onclick="backToList()">Batal</button>
+        <button class="btn-primary" onclick="saveAsesmen()">Simpan Asesmen & Lanjut ke Obat →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── POS VIEW ── -->
+  <div class="view" id="view-pos" style="flex-direction:row;overflow:hidden;height:calc(100vh - 54px);">
+    <div id="drug-panel">
+      <div style="padding:10px 14px;background:#0f1117;border-bottom:1px solid #1e2535;">
+        <button class="page-back btn-sm" onclick="backToList()">← Kembali ke Pasien</button>
+      </div>
+      <div id="filter-bar">
+        <input id="search-drug" placeholder="🔍 Cari obat..." oninput="renderDrugGrid()"/>
+        <div class="cat-filters" id="cat-filters"></div>
+      </div>
+      <div id="drug-grid"></div>
+    </div>
+    <div id="cart-panel">
+      <div class="cart-patient-info" id="cart-patient-info"></div>
+      <div id="cart-header">
+        <div style="font-weight:700;font-size:13px;">🧾 Resep</div>
+        <div id="cart-count">0 item</div>
+      </div>
+      <div id="cart-items"><div class="cart-empty">Pilih obat dari katalog</div></div>
+      <div id="cart-footer">
+        <div class="total-row"><span class="total-label">Total Biaya</span><span class="total-val" id="cart-total">Rp 0</span></div>
+        <button id="checkout-btn" disabled onclick="openCheckoutModal()">Keranjang Kosong</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STOK VIEW ── -->
+  <div class="view" id="view-stok" style="padding:20px;overflow-y:auto;">
+    <div class="pl-header">
+      <div class="pl-title">📦 Stok Obat</div>
+    </div>
+    <div id="low-alert" style="display:none;background:#2a1515;border:1px solid #ef4444;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:center;">
+      <span style="font-size:20px;">⚠️</span>
+      <div><div style="font-weight:700;color:#ef4444;font-size:13px;">Stok Hampir Habis</div><div style="font-size:12px;color:#94a3b8;" id="low-names"></div></div>
+    </div>
+    <div id="stock-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;"></div>
+  </div>
+
+  <!-- ── LAPORAN VIEW ── -->
+  <div class="view" id="view-laporan" style="padding:20px;overflow-y:auto;">
+    <div class="pl-title" style="margin-bottom:16px;">📊 Laporan IGD</div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">📋 Riwayat Transaksi Obat</div>
+        <div id="log-list"></div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:10px;">💊 Obat Terbanyak Digunakan</div>
+        <div id="usage-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<!-- SURAT PRINT TARGET -->
+<div id="surat-print"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+const CAT_COLORS = {
+  "Analgesik":"#3b82f6","Antibiotik":"#10b981","Kortikosteroid":"#f59e0b",
+  "Antiemetik":"#8b5cf6","Emergensi":"#ef4444","Cairan":"#06b6d4",
+  "Sedasi":"#ec4899","GI":"#84cc16","Respirasi":"#14b8a6",
+  "Diuretik":"#f97316","Antihipertensi":"#6366f1"
+};
+const CATEGORIES = ["Semua","Analgesik","Antibiotik","Kortikosteroid","Antiemetik","Emergensi","Cairan","Sedasi","GI","Respirasi","Diuretik","Antihipertensi"];
+
+let stocks = [
+  {id:1,name:"Paracetamol 500mg",category:"Analgesik",unit:"tab",stock:500,price:500},
+  {id:2,name:"Ibuprofen 400mg",category:"Analgesik",unit:"tab",stock:300,price:800},
+  {id:3,name:"Tramadol 50mg",category:"Analgesik",unit:"amp",stock:50,price:15000},
+  {id:4,name:"Ketorolac 30mg",category:"Analgesik",unit:"amp",stock:40,price:12000},
+  {id:5,name:"Amoxicillin 500mg",category:"Antibiotik",unit:"kap",stock:400,price:1200},
+  {id:6,name:"Ceftriaxone 1g",category:"Antibiotik",unit:"vial",stock:30,price:35000},
+  {id:7,name:"Ciprofloxacin 500mg",category:"Antibiotik",unit:"tab",stock:200,price:3000},
+  {id:8,name:"Metronidazole 500mg",category:"Antibiotik",unit:"tab",stock:150,price:1500},
+  {id:9,name:"Dexamethasone 5mg",category:"Kortikosteroid",unit:"amp",stock:60,price:5000},
+  {id:10,name:"Methylprednisolone 4mg",category:"Kortikosteroid",unit:"tab",stock:200,price:2500},
+  {id:11,name:"Ondansetron 4mg",category:"Antiemetik",unit:"amp",stock:80,price:8000},
+  {id:12,name:"Metoclopramide 10mg",category:"Antiemetik",unit:"amp",stock:100,price:4000},
+  {id:13,name:"Epinephrine 1mg",category:"Emergensi",unit:"amp",stock:20,price:25000},
+  {id:14,name:"Atropine 0.25mg",category:"Emergensi",unit:"amp",stock:25,price:18000},
+  {id:15,name:"NaCl 0.9% 500ml",category:"Cairan",unit:"botol",stock:100,price:22000},
+  {id:16,name:"RL 500ml",category:"Cairan",unit:"botol",stock:80,price:20000},
+  {id:17,name:"Diazepam 10mg",category:"Sedasi",unit:"amp",stock:30,price:10000},
+  {id:18,name:"Midazolam 5mg",category:"Sedasi",unit:"amp",stock:25,price:28000},
+  {id:19,name:"Omeprazole 40mg",category:"GI",unit:"vial",stock:60,price:18000},
+  {id:20,name:"Ranitidine 50mg",category:"GI",unit:"amp",stock:90,price:6000},
+  {id:21,name:"Salbutamol 2.5mg",category:"Respirasi",unit:"neb",stock:50,price:12000},
+  {id:22,name:"Aminophylline 24mg",category:"Respirasi",unit:"amp",stock:40,price:8000},
+  {id:23,name:"Furosemide 20mg",category:"Diuretik",unit:"amp",stock:45,price:5000},
+  {id:24,name:"Captopril 25mg",category:"Antihipertensi",unit:"tab",stock:300,price:700},
+  {id:25,name:"Combivent (Nebul)",category:"Respirasi",unit:"resp",stock:40,price:18000},
+  {id:26,name:"Pulmicort (Nebul)",category:"Respirasi",unit:"resp",stock:35,price:25000},
+];
+
+let patients = [];
+let logs = [];
+let cart = [];
+let activeCategory = "Semua";
+let activePatientId = null;
+let restockId = null;
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+const fmt = n => new Intl.NumberFormat("id-ID").format(n);
+const fmtDate = d => d ? new Date(d).toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"}) : "-";
+const fmtDateShort = d => d ? new Date(d).toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"}) : "-";
+
+function showToast(msg, type="success") {
+  const t = document.getElementById("toast");
+  t.textContent = (type==="success"?"✓ ":"⚠ ") + msg;
+  t.style.background = type==="success" ? "#10b981" : "#f59e0b";
+  t.style.display = "block";
+  setTimeout(()=>t.style.display="none", 3000);
+}
+
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+
+function genMR() {
+  const mr = "MR" + Date.now().toString().slice(-8);
+  document.getElementById("np-mr").value = mr;
+}
+
+function calcAge(dob) {
+  if (!dob) return "-";
+  const diff = Date.now() - new Date(dob).getTime();
+  return Math.floor(diff / (1000*60*60*24*365.25)) + " thn";
+}
+
+// ══════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════
+function switchNav(tab) {
+  ["pasien","stok","laporan"].forEach(t => {
+    document.getElementById("nav-"+t).classList.toggle("active", t===tab);
+  });
+  ["view-pasien","view-stok","view-laporan"].forEach(v => {
+    const el = document.getElementById(v);
+    el.classList.toggle("active", v === "view-"+tab);
+  });
+  // hide pos/asesmen when switching nav
+  document.getElementById("view-asesmen").classList.remove("active");
+  document.getElementById("view-pos").classList.remove("active");
+
+  if (tab === "stok") renderStockGrid();
+  if (tab === "laporan") renderReport();
+}
+
+function showView(viewId) {
+  ["view-pasien","view-asesmen","view-pos","view-stok","view-laporan"].forEach(v => {
+    document.getElementById(v).classList.remove("active");
+  });
+  document.getElementById(viewId).classList.add("active");
+}
+
+// ══════════════════════════════════════════════════════
+// PATIENT MANAGEMENT
+// ══════════════════════════════════════════════════════
+function saveNewPatient() {
+  const nama = document.getElementById("np-nama").value.trim();
+  if (!nama) { showToast("Nama pasien wajib diisi","warn"); return; }
+  const p = {
+    id: Date.now(),
+    mr: document.getElementById("np-mr").value,
+    nama, nik: document.getElementById("np-nik").value,
+    ttl: document.getElementById("np-ttl").value,
+    jk: document.getElementById("np-jk").value,
+    alamat: document.getElementById("np-alamat").value,
+    telp: document.getElementById("np-telp").value,
+    alergi: document.getElementById("np-alergi").value || "Tidak ada",
+    waktuMasuk: new Date().toLocaleString("id-ID"),
+    status: "Baru Masuk",
+    triase: null,
+    asesmen: null,
+    obat: [],
+  };
+  patients.unshift(p);
+  closeModal("new-patient-modal");
+  renderPatientTable();
+  showToast("Pasien " + nama + " berhasil didaftarkan");
+  // auto open asesmen
+  openAsesmen(p.id);
+}
+
+function renderPatientTable() {
+  const q = document.getElementById("pt-search").value.toLowerCase();
+  const filtered = patients.filter(p =>
+    p.nama.toLowerCase().includes(q) || p.mr.toLowerCase().includes(q) || p.nik.includes(q)
+  );
+  const tbody = document.getElementById("pt-tbody");
+  const empty = document.getElementById("pt-empty");
+  if (!filtered.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
+  empty.style.display="none";
+  const triaseColor = {Merah:"badge-red",Kuning:"badge-yellow",Hijau:"badge-green",Hitam:"badge-gray"};
+  const statusColor = {"Baru Masuk":"badge-blue","Asesmen Selesai":"badge-yellow","Obat Diberikan":"badge-green","Selesai":"badge-gray"};
+  tbody.innerHTML = filtered.map(p => `
+    <tr>
+      <td><span style="font-family:'DM Mono';font-size:12px;color:#64748b;">${p.mr}</span></td>
+      <td><div style="font-weight:600;">${p.nama}</div><div style="font-size:11px;color:#475569;">${p.jk||""} · NIK: ${p.nik||"-"}</div></td>
+      <td>${fmtDateShort(p.ttl)}<br/><span style="font-size:11px;color:#475569;">${calcAge(p.ttl)}</span></td>
+      <td>${p.triase ? `<span class="badge ${triaseColor[p.triase]||'badge-gray'}">${p.triase}</span>` : '<span style="color:#334155;font-size:12px;">-</span>'}</td>
+      <td style="max-width:160px;"><div style="font-size:12px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.asesmen?.dxKerja || "-"}</div></td>
+      <td><span class="badge ${statusColor[p.status]||'badge-gray'}">${p.status}</span></td>
+      <td style="font-size:11px;color:#475569;">${p.waktuMasuk}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-warning btn-sm" onclick="openAsesmen(${p.id})">📋 Asesmen</button>
+          <button class="btn-success btn-sm" onclick="openPOS(${p.id})" ${!p.asesmen?'disabled title="Selesaikan asesmen dulu"':''}>💊 Obat</button>
+          <button class="btn-info btn-sm" onclick="openSuratSakit(${p.id})" ${!p.asesmen?'disabled':''}>🖨️ Surat</button>
+        </div>
+      </td>
+    </tr>`).join("");
+}
+
+function backToList() {
+  cart = [];
+  activePatientId = null;
+  showView("view-pasien");
+  renderPatientTable();
+}
+
+// ══════════════════════════════════════════════════════
+// ASESMEN
+// ══════════════════════════════════════════════════════
+function openAsesmen(pid) {
+  activePatientId = pid;
+  const p = patients.find(x=>x.id===pid);
+  // fill patient info bar
+  document.getElementById("asesmen-patient-bar").innerHTML = `
+    <div class="pib-item"><div class="pib-label">No. MR</div><div class="pib-val" style="font-family:'DM Mono'">${p.mr}</div></div>
+    <div class="pib-item"><div class="pib-label">Nama</div><div class="pib-val">${p.nama}</div></div>
+    <div class="pib-item"><div class="pib-label">Tgl Lahir</div><div class="pib-val">${fmtDateShort(p.ttl)} (${calcAge(p.ttl)})</div></div>
+    <div class="pib-item"><div class="pib-label">NIK</div><div class="pib-val" style="font-family:'DM Mono'">${p.nik||"-"}</div></div>
+    <div class="pib-item"><div class="pib-label">Alergi</div><div class="pib-val" style="color:${p.alergi!=='Tidak ada'?'#ef4444':'#10b981'}">${p.alergi}</div></div>
+    <div class="pib-item"><div class="pib-label">Waktu Masuk</div><div class="pib-val">${p.waktuMasuk}</div></div>
+  `;
+  // pre-fill if existing asesmen
+  if (p.asesmen) {
+    const a = p.asesmen;
+    // triase
+    document.querySelectorAll('.triase-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.triase === p.triase);
+    });
+    ['vs-td','vs-nadi','vs-rr','vs-suhu','vs-spo2','vs-gds','vs-bb','vs-tb','ku','pain-scale',
+     'keluhan','rpd','riwayat-terapi','dx-kerja','dx-sekunder','terapi-igd','advis-dpjp',
+     'lab','radiologi','dokter-asesmen','nama-rs','alamat-rs','ket-airway','ket-breathing',
+     'ket-circulation','ket-exposure','pe-kepala','pe-mata','pe-hidung','pe-telinga','pe-mulut',
+     'pe-leher','pe-thorax','pe-cor','pe-pulmo','pe-abdomen','pe-punggung','pe-ekstremitas',
+     'istirahat-dari','istirahat-sampai'
+    ].forEach(id => { const el = document.getElementById(id); if(el && a[id]) el.value = a[id]; });
+    if(a.gcse) document.getElementById("gcs-e").value = a.gcse;
+    if(a.gcsv) document.getElementById("gcs-v").value = a.gcsv;
+    if(a.gcsm) document.getElementById("gcs-m").value = a.gcsm;
+    if(a.pupil) document.getElementById("pupil").value = a.pupil;
+    if(a.diameterPupil) document.getElementById("diameter-pupil").value = a.diameterPupil;
+    if(a.indikasiRawat) document.getElementById("indikasi-rawat").value = a.indikasiRawat;
+    if(a.tindakLanjut) document.getElementById("tindak-lanjut").value = a.tindakLanjut;
+    calcGCS();
+  }
+  showView("view-asesmen");
+}
+
+function setTriase(el) {
+  document.querySelectorAll('.triase-opt').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function calcGCS() {
+  const e = parseInt(document.getElementById("gcs-e").value)||0;
+  const v = parseInt(document.getElementById("gcs-v").value)||0;
+  const m = parseInt(document.getElementById("gcs-m").value)||0;
+  const total = e+v+m;
+  document.getElementById("gcs-display").textContent = `GCS: E${e} V${v} M${m} = ${total}`;
+}
+
+function getChecked(groupId) {
+  return [...document.querySelectorAll(`#${groupId} input:checked`)].map(x=>x.value);
+}
+
+function saveAsesmen() {
+  const p = patients.find(x=>x.id===activePatientId);
+  if (!p) return;
+  const triaseEl = document.querySelector('.triase-opt.selected');
+  p.triase = triaseEl ? triaseEl.dataset.triase : null;
+  const getV = id => { const el=document.getElementById(id); return el?el.value:''; };
+  p.asesmen = {
+    // vital signs
+    'vs-td':getV('vs-td'),'vs-nadi':getV('vs-nadi'),'vs-rr':getV('vs-rr'),
+    'vs-suhu':getV('vs-suhu'),'vs-spo2':getV('vs-spo2'),'vs-gds':getV('vs-gds'),
+    'vs-bb':getV('vs-bb'),'vs-tb':getV('vs-tb'),'ku':getV('ku'),'pain-scale':getV('pain-scale'),
+    // primer
+    airway: getChecked('chk-airway'), 'ket-airway':getV('ket-airway'),
+    breathing: getChecked('chk-breathing'), 'ket-breathing':getV('ket-breathing'),
+    circulation: getChecked('chk-circulation'), 'ket-circulation':getV('ket-circulation'),
+    exposure: getChecked('chk-exposure'), 'ket-exposure':getV('ket-exposure'),
+    gcse:getV('gcs-e'),gcsv:getV('gcs-v'),gcsm:getV('gcs-m'),
+    pupil:getV('pupil'),diameterPupil:getV('diameter-pupil'),
+    // PE
+    'pe-kepala':getV('pe-kepala'),'pe-mata':getV('pe-mata'),'pe-hidung':getV('pe-hidung'),
+    'pe-telinga':getV('pe-telinga'),'pe-mulut':getV('pe-mulut'),'pe-leher':getV('pe-leher'),
+    'pe-thorax':getV('pe-thorax'),'pe-cor':getV('pe-cor'),'pe-pulmo':getV('pe-pulmo'),
+    'pe-abdomen':getV('pe-abdomen'),'pe-punggung':getV('pe-punggung'),'pe-ekstremitas':getV('pe-ekstremitas'),
+    // anamnesis
+    'keluhan':getV('keluhan'),'rpd':getV('rpd'),'riwayat-terapi':getV('riwayat-terapi'),
+    // dx
+    dxKerja:getV('dx-kerja'),dxSekunder:getV('dx-sekunder'),
+    'terapi-igd':getV('terapi-igd'),'advis-dpjp':getV('advis-dpjp'),
+    // penunjang
+    'lab':getV('lab'),'radiologi':getV('radiologi'),
+    indikasiRawat:getV('indikasi-rawat'),tindakLanjut:getV('tindak-lanjut'),
+    // dokter
+    dokter:getV('dokter-asesmen'),namaRS:getV('nama-rs'),alamatRS:getV('alamat-rs'),
+    'istirahat-dari':getV('istirahat-dari'),'istirahat-sampai':getV('istirahat-sampai'),
+    waktuSelesai: new Date().toLocaleString("id-ID"),
+  };
+  p.status = "Asesmen Selesai";
+  showToast("Asesmen " + p.nama + " berhasil disimpan");
+  openPOS(p.id);
+}
+
+// ══════════════════════════════════════════════════════
+// POS
+// ══════════════════════════════════════════════════════
+function openPOS(pid) {
+  activePatientId = pid;
+  const p = patients.find(x=>x.id===pid);
+  cart = [];
+  // patient info in cart
+  const a = p.asesmen;
+  document.getElementById("cart-patient-info").innerHTML = `
+    <div class="cpi-name">👤 ${p.nama}</div>
+    <div class="cpi-dx">${a?.dxKerja||"Belum ada diagnosis"}</div>
+    <div style="font-size:10px;color:#334155;margin-top:4px;">SpO2: ${a?.['vs-spo2']||'-'}% · TD: ${a?.['vs-td']||'-'} · Suhu: ${a?.['vs-suhu']||'-'}°C</div>
+  `;
+  renderCatFilters();
+  renderDrugGrid();
+  renderCart();
+  showView("view-pos");
+}
+
+function renderCatFilters() {
+  document.getElementById("cat-filters").innerHTML = CATEGORIES.map(cat => `
+    <button class="cat-btn ${cat===activeCategory?'active':''}"
+      style="${cat===activeCategory?'background:'+(CAT_COLORS[cat]||'#ef4444')+';opacity:1;':''}"
+      onclick="setCategory('${cat}')">${cat}</button>`).join("");
+}
+
+function setCategory(cat) { activeCategory=cat; renderCatFilters(); renderDrugGrid(); }
+
+function renderDrugGrid() {
+  const q = document.getElementById("search-drug").value.toLowerCase();
+  const filtered = stocks.filter(s => {
+    return (activeCategory==="Semua"||s.category===activeCategory) && s.name.toLowerCase().includes(q);
+  });
+  document.getElementById("drug-grid").innerHTML = filtered.map(item => {
+    const inC = cart.find(c=>c.id===item.id);
+    const oos = item.stock<=0;
+    const low = item.stock<10;
+    const col = CAT_COLORS[item.category]||"#64748b";
+    return `<button class="drug-card ${inC?'in-cart':''}" ${oos?'disabled':''} onclick="addToCart(${item.id})">
+      <div class="dc-cat" style="color:${col}">${item.category}</div>
+      <div class="dc-name">${item.name}</div>
+      <div class="dc-bottom">
+        <div class="dc-stock" style="color:${oos?'#ef4444':low?'#f59e0b':'#475569'}">Stok: ${item.stock} ${item.unit}</div>
+        ${inC?`<div class="dc-badge">×${inC.qty}</div>`:''}
+      </div>
+      <div class="dc-price">Rp ${fmt(item.price)}</div>
+    </button>`;
+  }).join("");
+}
+
+function addToCart(id) {
+  const item = stocks.find(s=>s.id===id);
+  if (!item||item.stock<=0) return;
+  const ex = cart.find(c=>c.id===id);
+  if (ex) { if(ex.qty>=item.stock) return; ex.qty++; }
+  else cart.push({...item,qty:1});
+  renderCart(); renderDrugGrid();
+}
+
+function removeFromCart(id) { cart=cart.filter(c=>c.id!==id); renderCart(); renderDrugGrid(); }
+
+function changeQty(id,delta) {
+  const item=stocks.find(s=>s.id===id), c=cart.find(c=>c.id===id);
+  if(!c) return;
+  const nq=c.qty+delta;
+  if(nq<1||nq>item.stock) return;
+  c.qty=nq; renderCart(); renderDrugGrid();
+}
+
+function renderCart() {
+  const total = cart.reduce((a,c)=>a+c.qty*c.price,0);
+  const items = cart.reduce((a,c)=>a+c.qty,0);
+  document.getElementById("cart-count").textContent = items + " item";
+  document.getElementById("cart-total").textContent = "Rp " + fmt(total);
+  const btn = document.getElementById("checkout-btn");
+  btn.disabled = !cart.length;
+  btn.textContent = cart.length ? "✓ Berikan Obat" : "Keranjang Kosong";
+  const el = document.getElementById("cart-items");
+  if (!cart.length) { el.innerHTML='<div class="cart-empty">Pilih obat dari katalog</div>'; return; }
+  el.innerHTML = cart.map(c=>`
+    <div class="cart-item">
+      <div class="ci-name">${c.name}</div>
+      <div class="ci-unit">Rp ${fmt(c.price)} / ${c.unit}</div>
+      <div class="ci-row">
+        <div class="qty-wrap">
+          <button class="qty-btn" onclick="changeQty(${c.id},-1)">−</button>
+          <span class="qty-val">${c.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${c.id},1)">+</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="ci-price">Rp ${fmt(c.qty*c.price)}</span>
+          <button class="ci-remove" onclick="removeFromCart(${c.id})">✕</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function openCheckoutModal() {
+  if(!cart.length) return;
+  const total = cart.reduce((a,c)=>a+c.qty*c.price,0);
+  document.getElementById("modal-receipt").innerHTML =
+    cart.map(c=>`<div class="receipt-row"><span>${c.name} ×${c.qty} ${c.unit}</span><span>Rp ${fmt(c.qty*c.price)}</span></div>`).join("") +
+    `<div class="receipt-total"><span>Total</span><span>Rp ${fmt(total)}</span></div>`;
+  openModal("confirm-modal");
+}
+
+function confirmCheckout() {
+  const p = patients.find(x=>x.id===activePatientId);
+  const total = cart.reduce((a,c)=>a+c.qty*c.price,0);
+  const log = {
+    id:Date.now(),date:new Date().toLocaleString("id-ID"),
+    patient:p.nama,mr:p.mr,doctor:p.asesmen?.dokter||"Dokter Jaga",
+    items:cart.map(c=>({...c})),total
+  };
+  logs.unshift(log);
+  p.obat.push(log);
+  p.status = "Obat Diberikan";
+  stocks.forEach(s=>{ const c=cart.find(x=>x.id===s.id); if(c) s.stock-=c.qty; });
+  cart=[];
+  closeModal("confirm-modal");
+  renderCart(); renderDrugGrid();
+  showToast("Obat berhasil diberikan ke "+p.nama);
+}
+
+// ══════════════════════════════════════════════════════
+// SURAT SAKIT
+// ══════════════════════════════════════════════════════
+function openSuratSakit(pid) {
+  const p = patients.find(x=>x.id===pid);
+  if (!p||!p.asesmen) return;
+  const a = p.asesmen;
+  const namaRS = a.namaRS || "RS / KLINIK";
+  const alamatRS = a.alamatRS || "";
+  const dokter = a.dokter || "dr. _______________";
+  const dari = a['istirahat-dari'] ? fmtDate(a['istirahat-dari']) : "_______________";
+  const sampai = a['istirahat-sampai'] ? fmtDate(a['istirahat-sampai']) : "_______________";
+  const obatList = p.obat.flatMap(o=>o.items).reduce((acc,item)=>{
+    const ex=acc.find(x=>x.name===item.name);
+    if(ex) ex.qty+=item.qty; else acc.push({name:item.name,qty:item.qty,unit:item.unit});
+    return acc;
+  },[]);
+
+  const html = `
+  <div style="padding:30px;font-family:'Times New Roman',serif;font-size:12px;color:#000;background:#fff;">
+    <!-- KOP -->
+    <div style="display:flex;align-items:center;gap:16px;border-bottom:3px double #000;padding-bottom:12px;margin-bottom:4px;">
+      <div style="width:60px;height:60px;background:#f0f0f0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🏥</div>
+      <div>
+        <div style="font-size:18px;font-weight:700;text-transform:uppercase;">${namaRS}</div>
+        <div style="font-size:11px;color:#444;">${alamatRS}</div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:15px;font-weight:700;margin:16px 0 20px;letter-spacing:2px;text-decoration:underline;">SURAT KETERANGAN SAKIT</div>
+    <p style="margin-bottom:12px;">Yang bertanda tangan di bawah ini, dokter pada <b>${namaRS}</b>, menerangkan bahwa:</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      <tr><td style="width:160px;padding:4px 0;font-weight:600;">Nama</td><td style="width:12px;">:</td><td>${p.nama}</td></tr>
+      <tr><td style="padding:4px 0;font-weight:600;">NIK</td><td>:</td><td>${p.nik||"-"}</td></tr>
+      <tr><td style="padding:4px 0;font-weight:600;">Tanggal Lahir</td><td>:</td><td>${fmtDate(p.ttl)}</td></tr>
+      <tr><td style="padding:4px 0;font-weight:600;">Jenis Kelamin</td><td>:</td><td>${p.jk||"-"}</td></tr>
+      <tr><td style="padding:4px 0;font-weight:600;">Alamat</td><td>:</td><td>${p.alamat||"-"}</td></tr>
+    </table>
+    <p style="margin-bottom:8px;">Adalah benar pasien di atas telah diperiksa dan dirawat di <b>${namaRS}</b> dengan:</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      <tr><td style="width:160px;padding:4px 0;font-weight:600;">Diagnosis</td><td style="width:12px;">:</td><td><b>${a.dxKerja||"-"}</b>${a.dxSekunder?' / '+a.dxSekunder:''}</td></tr>
+      <tr><td style="padding:4px 0;font-weight:600;">Tanggal Berobat</td><td>:</td><td>${p.waktuMasuk}</td></tr>
+      ${obatList.length?`<tr><td style="padding:4px 0;vertical-align:top;font-weight:600;">Terapi Obat</td><td>:</td><td>${obatList.map(o=>`${o.name} (${o.qty} ${o.unit})`).join(", ")}</td></tr>`:''}
+    </table>
+    <p style="margin-bottom:16px;">Pasien tersebut dianjurkan untuk <b>beristirahat</b> mulai tanggal <b>${dari}</b> sampai dengan <b>${sampai}</b>.</p>
+    <p style="margin-bottom:30px;">Demikian surat keterangan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+    <div style="display:flex;justify-content:flex-end;">
+      <div style="text-align:center;min-width:200px;">
+        <div>${p.asesmen?.waktuSelesai?.split(",")[0]||new Date().toLocaleDateString("id-ID")}</div>
+        <div style="margin-bottom:70px;">Dokter yang memeriksa,</div>
+        <div style="border-top:1px solid #000;padding-top:4px;font-weight:700;">${dokter}</div>
+        <div style="font-size:10px;color:#555;">No. SIP: _______________________</div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById("surat-content").innerHTML = html;
+  document.getElementById("surat-print").innerHTML = html;
+  openModal("surat-modal");
+}
+
+// ══════════════════════════════════════════════════════
+// STOK
+// ══════════════════════════════════════════════════════
+function renderStockGrid() {
+  const low = stocks.filter(s=>s.stock<20);
+  const la = document.getElementById("low-alert");
+  if(low.length){la.style.display="flex";document.getElementById("low-names").textContent=low.map(s=>s.name).join(", ");}
+  else la.style.display="none";
+  document.getElementById("stock-grid").innerHTML = stocks.map(s=>{
+    const cls = s.stock<10?"border-color:#ef444466":s.stock<20?"border-color:#f59e0b66":"";
+    const qc = s.stock<10?"#ef4444":s.stock<20?"#f59e0b":"#10b981";
+    const col = CAT_COLORS[s.category]||"#64748b";
+    return `<div style="background:#161b27;border:1px solid #1e2535;${cls};border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="flex:1;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:${col};margin-bottom:2px;">${s.category}</div>
+        <div style="font-size:14px;font-weight:600;color:#e2e8f0;">${s.name}</div>
+        <div style="display:flex;gap:12px;margin-top:4px;">
+          <span style="font-size:12px;font-family:'DM Mono';font-weight:600;color:${qc};">${s.stock} ${s.unit}</span>
+          <span style="font-size:12px;color:#475569;font-family:'DM Mono';">Rp ${fmt(s.price)}</span>
+        </div>
+      </div>
+      <button onclick="openRestock(${s.id})" style="background:#1e2535;color:#94a3b8;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans';">+ Restock</button>
+    </div>`;
+  }).join("");
+}
+
+function openRestock(id) {
+  restockId=id;
+  const s=stocks.find(x=>x.id===id);
+  document.getElementById("restock-item-name").textContent=s.name;
+  document.getElementById("restock-unit-lbl").textContent=`Jumlah Tambahan (${s.unit})`;
+  document.getElementById("restock-qty").value="";
+  openModal("restock-modal");
+}
+
+function confirmRestock() {
+  const qty=parseInt(document.getElementById("restock-qty").value);
+  if(!restockId||isNaN(qty)||qty<=0) return;
+  const s=stocks.find(x=>x.id===restockId);
+  s.stock+=qty;
+  closeModal("restock-modal");
+  renderStockGrid();
+  showToast("Stok "+s.name+" ditambah "+qty+" "+s.unit);
+}
+
+// ══════════════════════════════════════════════════════
+// LAPORAN
+// ══════════════════════════════════════════════════════
+function renderReport() {
+  const totalItems = logs.reduce((a,l)=>a+l.items.reduce((b,i)=>b+i.qty,0),0);
+  const totalVal = logs.reduce((a,l)=>a+l.total,0);
+  document.getElementById("stats-grid").innerHTML = [
+    {label:"Total Pasien",value:patients.length,icon:"👤",suffix:"pasien"},
+    {label:"Transaksi Obat",value:logs.length,icon:"📋",suffix:"kali"},
+    {label:"Item Obat Keluar",value:totalItems,icon:"💊",suffix:"item"},
+    {label:"Nilai Obat Keluar",value:"Rp "+fmt(totalVal),icon:"💰",suffix:""},
+  ].map(s=>`<div class="stat-card"><div class="stat-icon">${s.icon}</div><div class="stat-val">${s.value} ${s.suffix}</div><div class="stat-label">${s.label}</div></div>`).join("");
+
+  const logEl=document.getElementById("log-list");
+  if(!logs.length){logEl.innerHTML='<div style="color:#334155;font-size:13px;">Belum ada transaksi</div>';return;}
+  logEl.innerHTML=logs.map(l=>`
+    <div style="background:#161b27;border:1px solid #1e2535;border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <div><div style="font-size:13px;font-weight:600;">👤 ${l.patient}</div><div style="font-size:11px;color:#64748b;">${l.mr} · dr. ${l.doctor} · ${l.date}</div></div>
+        <div style="font-family:'DM Mono';font-size:13px;font-weight:700;color:#10b981;">Rp ${fmt(l.total)}</div>
+      </div>
+      <div style="font-size:11px;color:#475569;">${l.items.map(i=>`${i.name} ×${i.qty}`).join(", ")}</div>
+    </div>`).join("");
+
+  const usage={};
+  logs.forEach(l=>l.items.forEach(item=>{
+    if(!usage[item.name]) usage[item.name]={name:item.name,category:item.category,total:0,cost:0};
+    usage[item.name].total+=item.qty; usage[item.name].cost+=item.qty*item.price;
+  }));
+  const sorted=Object.values(usage).sort((a,b)=>b.total-a.total).slice(0,10);
+  const ul=document.getElementById("usage-list");
+  if(!sorted.length){ul.innerHTML='<div style="color:#334155;font-size:13px;">Belum ada data</div>';return;}
+  ul.innerHTML=sorted.map((d,i)=>`
+    <div style="background:#161b27;border:1px solid #1e2535;border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;">
+      <div style="font-family:'DM Mono';font-size:11px;color:#334155;width:20px;text-align:right;">#${i+1}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${d.name}</div><div style="font-size:11px;color:${CAT_COLORS[d.category]||'#64748b'}">${d.category}</div></div>
+      <div style="text-align:right;"><div style="font-family:'DM Mono';font-size:13px;font-weight:700;">${d.total}×</div><div style="font-size:10px;color:#475569;">Rp ${fmt(d.cost)}</div></div>
+    </div>`).join("");
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+document.getElementById("date-badge").textContent =
+  new Date().toLocaleDateString("id-ID",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
+calcGCS();
+renderPatientTable();
+
+// close modal on overlay click
+document.querySelectorAll(".modal-overlay").forEach(el => {
+  el.addEventListener("click", e => { if(e.target===el) el.classList.remove("open"); });
+});
+
+// checkbox visual
+document.querySelectorAll(".check-item").forEach(label => {
+  const cb = label.querySelector("input");
+  cb.addEventListener("change", () => label.classList.toggle("checked", cb.checked));
+});
+</script>
+</body>
+</html>
